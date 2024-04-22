@@ -6,7 +6,8 @@ public class HeroEntity : MonoBehaviour
     [SerializeField] private Rigidbody2D _rigidbody;
 
     [Header("Horizontal Movements")]
-    [SerializeField] private float _horizontalSpeed = 5f;
+    [SerializeField] private HeroHorizontalMovementsSettings _movementsSettings;
+    private float _horizontalSpeed = 5f;
     private float _moveDirX = 0f;
 
     [Header("Orientation")]
@@ -16,6 +17,26 @@ public class HeroEntity : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool _guiDebug = false;
 
+    private void _Accelerate()
+    {
+        _horizontalSpeed += _movementsSettings.acceleration * Time.fixedDeltaTime;
+        if (_horizontalSpeed > _movementsSettings.speedMax)
+        {
+            _horizontalSpeed = _movementsSettings.speedMax;
+        }
+    }
+
+    private void _UpdateHorizontalSpeed()
+    {
+        if (_moveDirX != 0)
+        {
+            _Accelerate();
+        } else
+        {
+            _horizontalSpeed = 0f;
+        }
+    }
+
     public void SetMoveDirX(float dirX)
     {
         _moveDirX = dirX;
@@ -23,6 +44,7 @@ public class HeroEntity : MonoBehaviour
 
     private void FixedUpdate()
     {
+        _UpdateHorizontalSpeed();
         _ChangeOrientFromHorizontalMovement();
         _ApplyHorizontalSpeed();
     }
