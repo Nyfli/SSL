@@ -30,6 +30,7 @@ public class HeroEntity : MonoBehaviour
     [SerializeField] private HeroJumpSettings _jumpSettings;
     [SerializeField] private HeroFallSettings _jumpFallSettings;
 
+
     enum JumpState
     {
         NotJumping,
