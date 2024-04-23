@@ -77,13 +77,12 @@ public class HeroEntity : MonoBehaviour
         if (_AreOrientAndMovementOpposite())
         {
             _TurnBack();
-        } else
-        {
+        } else {
             _UpdateHorizontalSpeed();
             _ChangeOrientFromHorizontalMovement();
         }
 
-        if(IsTouchingGround)
+        if(!IsTouchingGround)
         {
             _ApplyFallGravity();
         } else {
