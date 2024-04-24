@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class HeroEntity : MonoBehaviour
 {
@@ -6,7 +7,9 @@ public class HeroEntity : MonoBehaviour
     [SerializeField] private Rigidbody2D _rigidbody;
 
     [Header("Horizontal Movements")]
-    [SerializeField] private HeroHorizontalMovementsSettings _movementsSettings;
+    [FormerlySerializedAs(oldName: "_movementsSettings;")]
+    [SerializeField] private HeroHorizontalMovementsSettings _groundHorizontalMovementsSettings;
+    [SerializeField] private HeroHorizontalMovementsSettings _airHorizontalMovementsSettings;
     private float _horizontalSpeed = 5f;
     private float _moveDirX = 0f;
 
@@ -25,17 +28,17 @@ public class HeroEntity : MonoBehaviour
 
     [Header("Ground")]
     [SerializeField] private GroundDetector _groundDetector;
+    public bool IsTouchingGround { get; private set; } = false;
 
     [Header("Jump")]
     [SerializeField] private HeroJumpSettings _jumpSettings;
     [SerializeField] private HeroFallSettings _jumpFallSettings;
 
-
     enum JumpState
     {
         NotJumping,
-        JumpingImpulsion,
-        Falling,
+        JumpImpulsion,
+        Falling
     }
     private JumpState _jumpState = JumpState.NotJumping;
     private float _jumpTimer = 0f;
@@ -50,9 +53,17 @@ public class HeroEntity : MonoBehaviour
         }
     }
 
+    public bool IsJumpImpulsing => _jumpState == JumpState.JumpImpulsion;
+    public bool IsJumpMinDurationReached => _jumpTimer >= _jumpSettings.jumpMinDuration;
+
+    public void StopJumpImpulsion()
+    {
+        _jumpState = JumpState.Falling;
+    }
+
     private void _UpdateJumpStateImpulsion()
     {
-        _jumpTimer += Time.fixedDeltaTime;
+        _jumpTimer += Time.fixedDeltaTime;  
         if (_jumpTimer < _jumpSettings.jumpMaxDuration)
         {
             _verticalSpeed = _jumpSettings.jumpSpeed;
@@ -78,7 +89,7 @@ public class HeroEntity : MonoBehaviour
     {
         switch (_jumpState)
         {
-            case JumpState.JumpingImpulsion:
+            case JumpState.JumpImpulsion:
                 _UpdateJumpStateImpulsion();
                 break;
             case JumpState.Falling:
@@ -89,11 +100,11 @@ public class HeroEntity : MonoBehaviour
 
     public void JumpStart()
     {
-        _jumpState = JumpState.JumpingImpulsion;
+        _jumpState = JumpState.JumpImpulsion;
         _jumpTimer = 0f;
     }
 
-    public bool IsTouchingGround { get; private set; } = false;
+
 
     private void _ApplyGroundDetection()
     {
@@ -105,32 +116,43 @@ public class HeroEntity : MonoBehaviour
         _verticalSpeed = 0f;
     }
 
-    private void _Accelerate()
+    private void _Accelerate(HeroHorizontalMovementsSettings settings)
     {
-        _horizontalSpeed += _movementsSettings.acceleration * Time.fixedDeltaTime;
-        if (_horizontalSpeed > _movementsSettings.speedMax)
+        _horizontalSpeed += settings.acceleration * Time.fixedDeltaTime;
+        if (_horizontalSpeed > settings.speedMax)
         {
-            _horizontalSpeed = _movementsSettings.speedMax;
+            _horizontalSpeed = settings.speedMax;
         }
     }
 
-    private void _Decelerate()
+    private void _Decelerate(HeroHorizontalMovementsSettings settings)
     {
-        _horizontalSpeed -= _movementsSettings.deceleration * Time.fixedDeltaTime;
+        _horizontalSpeed -= settings.deceleration * Time.fixedDeltaTime;
         if(_horizontalSpeed < 0)
         {
             _horizontalSpeed = 0;
         }
     }
 
-    private void _UpdateHorizontalSpeed()
+    private void _UpdateHorizontalSpeed(HeroHorizontalMovementsSettings settings)
     {
         if (_moveDirX != 0)
         {
-            _Accelerate();
+            _Accelerate(settings);
         } else
         {
-            _Decelerate();
+            _Decelerate(settings);
+        }
+    }
+
+    private HeroHorizontalMovementsSettings _GetCurrentHorizontalMovementsSettings()
+    {
+        if (IsTouchingGround)
+        {
+            return _groundHorizontalMovementsSettings;
+        } else
+        {
+            return _airHorizontalMovementsSettings;
         }
     }
 
@@ -142,18 +164,21 @@ public class HeroEntity : MonoBehaviour
     private void FixedUpdate()
     {
         _ApplyGroundDetection();
+
+        HeroHorizontalMovementsSettings horizontalMovementSettings = _GetCurrentHorizontalMovementsSettings();
         if (_AreOrientAndMovementOpposite())
         {
-            _TurnBack();
+            _TurnBack(horizontalMovementSettings);
         } else {
-            _UpdateHorizontalSpeed();
+            _UpdateHorizontalSpeed(horizontalMovementSettings);
             _ChangeOrientFromHorizontalMovement();
         }
 
         if (IsJumping)
         {
             _UpdateJump();
-        } else
+        } 
+        else
         {
             if (!IsTouchingGround)
             {
@@ -211,9 +236,9 @@ public class HeroEntity : MonoBehaviour
         _orientVisualRoot.localScale = newScale;
     }
 
-    private void _TurnBack()
+    private void _TurnBack(HeroHorizontalMovementsSettings settings)
     {
-        _horizontalSpeed -= _movementsSettings.turnBackFriction * Time.fixedDeltaTime;
+        _horizontalSpeed -= settings.turnBackFriction * Time.fixedDeltaTime;
         if (_horizontalSpeed < 0f)
         {
             _horizontalSpeed = 0f;
@@ -244,5 +269,13 @@ public class HeroEntity : MonoBehaviour
         GUILayout.Label($"Horizontal Speed = {_horizontalSpeed}");
         GUILayout.Label($"Vertical Speed = {_verticalSpeed}");
         GUILayout.EndVertical();
+
+
     }
+    
+    
+
+
 }
+
+
