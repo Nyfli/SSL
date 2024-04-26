@@ -33,6 +33,24 @@ public class HeroEntity : MonoBehaviour
     [Header("Jump")]
     [SerializeField] private HeroJumpSettings _jumpSettings;
     [SerializeField] private HeroFallSettings _jumpFallSettings;
+    //Camera Follow
+    private CameraFollowable _cameraFollowable;
+
+    private void Awake()
+    {
+        _cameraFollowable = GetComponent<CameraFollowable>();
+        _cameraFollowable.FollowPositionX = _rigidbody.position.x;
+        _cameraFollowable.FollowPositionY = _rigidbody.position.y;
+    }
+
+    private void _UpdateCameraFollowablePosition()
+    {
+        _cameraFollowable.FollowPositionX = _rigidbody.position.x;
+        if(IsTouchingGround && !IsJumping)
+        {
+            _cameraFollowable.FollowPositionY = _rigidbody.position.y;
+        }
+    }
 
     enum JumpState
     {
@@ -164,6 +182,7 @@ public class HeroEntity : MonoBehaviour
     private void FixedUpdate()
     {
         _ApplyGroundDetection();
+        _UpdateCameraFollowablePosition();
 
         HeroHorizontalMovementsSettings horizontalMovementSettings = _GetCurrentHorizontalMovementsSettings();
         if (_AreOrientAndMovementOpposite())
