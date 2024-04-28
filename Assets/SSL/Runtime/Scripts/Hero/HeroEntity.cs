@@ -245,6 +245,7 @@ public class HeroEntity : MonoBehaviour
     private void Update()
     {
         _UpdateOrientVisual();
+
     }
 
     private void _UpdateOrientVisual()
